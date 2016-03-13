@@ -1,0 +1,69 @@
+public class ArrayQueueModule {
+    private static int size = 0;
+    //private static int capacity = 10;
+    private static int rear = 0, front = 0;
+    private static Object[] elements = new Object[15];
+    //len = elements.length()
+    // pre: true
+    // post: size = size' + 1
+    //      elements'[i] = elements[i] if 0 < i < size
+    //      elements'[size'] = element
+    //      queue is not empty
+
+    public static void enqueue(Object element) {
+        // elements[rear] = null; elements[front] is first to out
+        // 0 < rear, front < len; |rear - front| % len >= 1
+        assert element != null;
+        ensureCapacity(size + 1);
+        elements[rear++] = element;
+        rear %= elements.length;
+        size++;
+    }
+
+    private static void ensureCapacity(int capacity) {
+        if (capacity < elements.length) {
+            return;
+        }
+        // pre:
+        //    capacity = len
+        //post:
+        //
+        Object[] newElements = new Object[2 * capacity];
+        //newElements'[i] = elements[i]
+        for (int i = 0; i < elements.length; i++) {
+            newElements[i] = elements[(front + i) % elements.length];
+        }
+        front = 0;
+        rear = elements.length - 1;
+        elements = newElements;
+    }
+
+    //pre: size > 0;
+    //post: res = "first to in element"
+    public static Object element() {
+        return elements[front];
+    }
+
+    //pre: size > 0
+    public static Object dequeue() {
+        Object result =  elements[front++];
+        front %= elements.length;
+        size--;
+        return result;
+    }
+
+    public static int size() {
+        return size;
+    }
+
+    public static boolean isEmpty() {
+        return size == 0;
+    }
+
+    public static void clear() {
+        front = 0;
+        rear = 0;
+        size = 0;
+    }
+
+}
