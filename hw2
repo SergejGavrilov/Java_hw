@@ -1,0 +1,70 @@
+import java.lang.reflect.Array;
+
+public class BinarySearchMissing {
+    //pre: i < j => nums[i] >= nums[j]
+    //post:  elem = result  nums[elem - 1] > x >= nums[elem]
+    public static int iterative(int x, int[] nums, int len) {
+        int m, l = -1;
+        int r = len;
+        // INV: nums[0]..nums[l - 1] > x >= nums[r]..nums[len]
+        while (l < r - 1) {
+
+            m = (l + r) / 2;
+
+            if (nums[m] <= x) {
+                r = m;
+            } else {
+                l = m;
+            }
+        }
+        return r;
+    }
+
+    //pre: i < j => nums[i] >= nums[j]
+    //post:  elem = result  nums[elem - 1] > x >= nums[elem]
+    // INV: nums[0]..nums[l - 1] > x >=nums[r]..nums[len]
+    public static int recursive(int x, int[] nums, int l, int r) {
+        if (l < r - 1) {
+            int m = (l + r) / 2;
+            if (nums[m] <= x) {
+                return recursive(x, nums, l, m);
+            } else {
+                return recursive(x, nums, m, r);
+            }
+        } else {
+            return r;
+        }
+    }
+
+
+    public static void main(String[] args) {
+        //  Scanner in = new Scanner(System.in);
+        int x = Integer.parseInt(args[0]);
+        int[] nums = new int[1000000];
+        int i;
+        for (i = 1; i < Array.getLength(args); i++) {
+            nums[i - 1] = Integer.parseInt(args[i]);
+        }
+      /*  int m, l = -1;
+        int r = i + 1;
+        while (l < r - 1){
+            m = (l  + r) / 2;
+            if (nums[m] <= x){
+                r = m;
+            }else{
+                l = m;
+            }
+        }*/
+        // Array.getLength(args) - 1)
+        int r = args.length - 1;
+        // System.out.print(iterative(x, nums, r));
+        //  int elem = (recursive(x, nums, -1, r));
+        int elem = (iterative(x, nums, r));
+        if (nums[elem] == x) {
+            System.out.print(elem);
+        } else {
+            elem = -elem - 1;
+            System.out.print(elem);
+        }
+    }
+}
