@@ -1,0 +1,90 @@
+/**
+ * Created by 808648 on 24.04.2016.
+ */
+
+var variable = function (a) {
+    return function (x, y, z) {
+        if (a == "x") {
+            return x;
+        }
+        if (a == "y") {
+            return y;
+        }
+        if (a == "z") {
+            return z;
+        }
+    }
+};
+
+var common = function (l) {
+    return function (x, y, z) {
+        return l(x, y, z);
+    }
+};
+
+var binary = function (l) {
+    return function (f, g) {
+        return common(function (x, y, z) {
+            return l(f(x, y, z), g(x, y, z));
+        })
+    }
+};
+
+var unary = function (l) {
+    return function (f) {
+        return common(function (x, y, z) {
+            return l(f(x, y, z));
+        })
+    }
+};
+
+var add = binary(function (x, y) {
+    return x + y;
+});
+
+var divide = binary(function (x, y) {
+    return x / y;
+});
+
+var subtract = binary(function (x, y) {
+    return x - y;
+});
+
+var multiply = binary(function (x, y) {
+    return x * y
+});
+var mod = binary(function (f, g) {
+    return f % g
+});
+
+var power = binary(Math.pow);
+
+var abs = unary(Math.abs);
+
+var log = unary(Math.log);
+
+var cnst = function (e) {
+    return function (x, y, z) {
+        return e;
+    }
+};
+
+var negate = unary(function (e) {
+    return -e;
+});
+
+var expr = new power(
+    new log(
+        new cnst(4)),
+    new cnst(2)
+);
+
+//var r = [];
+
+/*
+ var parse = function (s, e) {
+ if (s[0] >= "0" && s[0] <= "9") {
+
+ }*/
+
+console.log(expr(5, 1, 2));
