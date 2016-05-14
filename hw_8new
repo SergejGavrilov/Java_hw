@@ -1,6 +1,42 @@
 /**
  * Created by 808648 on 24.04.2016.
  */
+"use strict";
+var common = function (l) {
+    return function (x, y, z) {
+        return l(x, y, z);
+    }
+};
+
+var unary = function (l) {
+    return function (f) {
+        return function (x, y, z) {
+            return l(f(x, y, z));
+        }
+    }
+};
+
+var binary = function (l) {
+    return function (f, g) {
+        return function (x, y, z) {
+            return l(f(x, y, z), g(x, y, z));
+        }
+    }
+};
+
+var operation = function (l) {
+    return function () {
+        var args = [];
+        for (var i = 0; i < arguments.length; i++) {
+            args[i] = arguments[i];
+        }
+        return function (x, y, z) {
+            return l.apply(null, args.map(function (f) {
+                return f(x, y, z);
+            }));
+        }
+    }
+};
 
 var variable = function (a) {
     return function (x, y, z) {
@@ -16,54 +52,31 @@ var variable = function (a) {
     }
 };
 
-var common = function (l) {
-    return function (x, y, z) {
-        return l(x, y, z);
-    }
-};
 
-var binary = function (l) {
-    return function (f, g) {
-        return function (x, y, z) {
-            return l(f(x, y, z), g(x, y, z));
-        }
-    }
-};
-
-var unary = function (l) {
-    return function (f) {
-        return function (x, y, z) {
-            return l(f(x, y, z));
-        }
-    }
-};
-
-var common = function(){};
-
-var add = binary(function (x, y) {
+var add = operation(function (x, y) {
     return x + y;
 });
 
-var divide = binary(function (x, y) {
+var divide = operation(function (x, y) {
     return x / y;
 });
 
-var subtract = binary(function (x, y) {
+var subtract = operation(function (x, y) {
     return x - y;
 });
 
-var multiply = binary(function (x, y) {
+var multiply = operation(function (x, y) {
     return x * y
 });
-var mod = binary(function (f, g) {
+var mod = operation(function (f, g) {
     return f % g
 });
 
-var power = binary(Math.pow);
+var power = operation(Math.pow);
 
-var abs = unary(Math.abs);
+var abs = operation(Math.abs);
 
-var log = unary(Math.log);
+var log = operation(Math.log);
 
 var cnst = function (e) {
     return function (x, y, z) {
@@ -71,21 +84,39 @@ var cnst = function (e) {
     }
 };
 
-var negate = unary(function (e) {
+var negate = operation(function (e) {
     return -e;
 });
 
-var expr = new power(
-    new negate(
-        new cnst(4)),
+var expr = new add(
+    new variable('x'),
     new cnst(2)
 );
+//console.log(expr(5, 1, 2));
 
-//var r = [];
+/*
+ var operations = [];
+ operations['+'] = binaryFunc;
 
+ */
+var binOperands = {
+    "+": add,
+    "-": subtract,
+    "/": divide,
+    "**": power,
+    "%": mod,
+    "*": multiply
+};
+
+var unOperands = {
+    "log": log,
+    "abs": abs,
+    "negate": negate
+};
 
 var parse = function (s) {
-    return s.split(' ').reduce(function (stack, cur) {
+    return s.trim().split(/\s+/).reduce(function (stack, cur) {
+
         var binaryFunc = function (func) {
             var first = stack.pop();
             var second = stack.pop();
@@ -98,42 +129,60 @@ var parse = function (s) {
             return stack;
         };
 
-        switch (cur) {
-            case '+':
-                return binaryFunc(add);
-                break;
-            case '-':
-                return binaryFunc(subtract);
-                break;
-            case '/':
-                return binaryFunc(divide);
-                break;
-            case '*':
-                return binaryFunc(multiply);
-                break;
-            case '%':
-                return binaryFunc(mod);
-                break;
-            case '**':
-                return binaryFunc(power);
-                break;
-            case 'log':
-                return unaryFunc(log);
-                break;
-            case 'abs':
-                return unaryFunc(abs);
-                break;
-            default:
+        if (cur in binOperands) {
+            return binaryFunc(binOperands[cur]);
+        } else {
+            if (cur in unOperands) {
+                return unaryFunc(unOperands[cur]);
+            } else {
                 if (cur == 'x' || cur == 'y' || cur == 'z')
                     stack.push(new variable(cur));
                 else
                     stack.push(new cnst(+cur));
                 return stack;
+            }
         }
-
     }, [])[0];
-
 };
 
-console.log(parse("x x 2 - * x * 1 +")(5));
-//console.log(expr(5, 1, 2));
+
+
+//parse("      x")(5);
+//(parse('4 z *')(1.00000000000000000000, 1.00000000000000000000, 2.00000000000000000000));
+//var s = '     x  2  +   ';
+//var ar = s.trim().split(/\s+/);
+//console.log(ar);
+
+/* switch (cur) {
+ //   operations[cur](add);
+ case '+':
+ return binaryFunc(add);
+ break;
+ case '-':
+ return binaryFunc(subtract);
+ break;
+ case '/':
+ return binaryFunc(divide);
+ break;
+ case '*':
+ return binaryFunc(multiply);
+ break;
+ case '%':
+ return binaryFunc(mod);
+ break;
+ case '**':
+ return binaryFunc(power);
+ break;
+ case 'log':
+ return unaryFunc(log);
+ break;
+ case 'abs':
+ return unaryFunc(abs);
+ break;
+ default:
+ if (cur == 'x' || cur == 'y' || cur == 'z')
+ stack.push(new variable(cur));
+ else
+ stack.push(new cnst(+cur));
+ return stack;
+ }*/
