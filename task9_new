@@ -1,0 +1,173 @@
+/**
+ * Created by 808648 on 14.05.2016.
+ */
+
+function BinOp(first, second, operation, sign, diffFunction) {
+    this._first = first;
+    this._second = second;
+    this._operation = operation;
+    this._sign = sign;
+    this._diffFunction = diffFunction;
+}
+
+BinOp.prototype.evaluate = function (x, y, z) {
+    return this._operation(this._first.evaluate(x, y, z), this._second.evaluate(x, y, z))
+};
+
+BinOp.prototype.toString = function () {
+    return this._first.toString() + " " + this._second.toString() + " " + this._sign;
+};
+
+BinOp.prototype.diff = function (dVariable) {
+    return this._diffFunction(dVariable)
+};
+
+function Subtract(first, second) {
+    BinOp.call(this, first, second, function(a, b) {return a - b}, "-");
+}
+
+Subtract.prototype = Object.create(BinOp.prototype);
+Subtract.prototype.constructor = Subtract;
+
+function Add(first, second) {
+    BinOp.call(this, first, second, function(a, b) {return a + b}, "+");
+}
+
+Add.prototype = Object.create(BinOp.prototype);
+Add.prototype.constructor = Add;
+
+function Multiply(first, second) {
+    BinOp.call(this, first, second, function(a, b) {return a * b}, "*");
+}
+
+Multiply.prototype = Object.create(BinOp.prototype);
+Multiply.prototype.constructor = Multiply;
+
+function Divide(first, second) {
+    BinOp.call(this, first, second, function(a, b) {return a / b}, "/");
+}
+
+Divide.prototype = Object.create(BinOp.prototype);
+Divide.prototype.constructor = Divide;
+
+function Negate(arg) {
+    this.arg = arg;
+}
+
+Negate.prototype.evaluate = function (x, y, z) {
+    return -this.arg.evaluate(x, y, z);
+};
+Negate.prototype.toString = function () {
+    return this.arg.toString() + " negate";
+};
+
+function Sin(arg) {
+    this.arg = arg;
+}
+
+Sin.prototype.evaluate = function (x, y, z) {
+    return Math.sin(+this.arg.evaluate(x, y, z));
+};
+
+Sin.prototype.toString = function () {
+    return this.arg.toString() + " sin";
+};
+
+function Cos(arg) {
+    this.arg = arg;
+}
+
+Cos.prototype.evaluate = function (x, y, z) {
+    return Math.cos(+this.arg.evaluate(x, y, z));
+};
+
+Cos.prototype.toString = function () {
+    return this.arg.toString() + " cos";
+};
+
+function Const(arg) {
+    this.arg = arg;
+}
+
+Const.prototype.evaluate = function (x, y, z) {
+    return +this.arg;
+};
+
+Const.prototype.toString = function () {
+    return ('' + this.arg);
+};
+
+function Variable(arg) {
+    this.arg = arg;
+}
+
+Variable.prototype.evaluate = function (x, y, z) {
+    switch (this.arg) {
+        case 'x':
+            return x;
+        case 'y':
+            return y;
+        case 'z':
+            return z;
+    }
+};
+Variable.prototype.toString = function () {
+    return (this.arg);
+};
+
+
+var binOperands = {
+    "+": Add,
+    "-": Subtract,
+    "/": Divide,
+
+    "*": Multiply
+};
+
+var unOperands = {
+
+    "negate": Negate,
+    "cos": Cos,
+    "sin": Sin
+};
+
+var parse = function (s) {
+    return s.trim().split(/\s+/).reduce(function (stack, cur) {
+
+        var binaryFunc = function (obj) {
+            var first = stack.pop();
+            var second = stack.pop();
+            stack.push(new obj(second, first));
+            return stack;
+        };
+
+        var unaryFunc = function (obj) {
+            stack.push(new obj(stack.pop()));
+            return stack;
+        };
+
+        if (cur in binOperands) {
+            return binaryFunc(binOperands[cur]);
+        } else {
+            if (cur in unOperands) {
+                return unaryFunc(unOperands[cur]);
+            } else {
+                if (cur == 'x' || cur == 'y' || cur == 'z')
+                    stack.push(new Variable(cur));
+                else
+                    stack.push(new Const(+cur));
+                return stack;
+            }
+        }
+    }, [])[0];
+};
+
+var expr = new Subtract(
+    new Multiply(
+        new Const(2),
+        new Variable("z")
+    ),
+    new Const(3)
+);
+//console.log(parse(expr.toString()).evaluate(1, 2, 3));
+//console.log(expr.evaluate(1, 2, 3));
