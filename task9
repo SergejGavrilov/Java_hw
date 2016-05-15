@@ -1,0 +1,129 @@
+/**
+ * Created by 808648 on 14.05.2016.
+ */
+
+function BinatyOperation(first, second) {
+    this.first = first;
+    this.second = second;
+}
+
+BinatyOperation.prototype.evaluate = function(x, y, z) {
+
+}
+
+function UnaryOperation(arg) {
+    this.arg = arg;
+}
+
+function Subtract(first, second) {
+ //   this.first = first;
+  //  this.second = second;
+    BinatyOperation.apply(this, arguments);
+  /*  this.evaluate = function(x, y, z) {
+        return first.evaluate(x, y, z) - second.evaluate(x, y, z);
+    };
+    this.toString = function() {
+        return (first.toString() + " " + second.toString() + " -");
+    }*/
+}
+
+Subtract.prototype = Object.create(BinatyOperation.prototype);
+Subtract.prototype.constructor = Subtract;
+Subtract.prototype.evaluate = function(x, y, z) {
+    return first.evaluate(x, y, z) - second.evaluate(x, y, z);
+};
+
+Subtract.prototype.toString = function() {
+    return (first.toString() + " " + second.toString() + " -");
+}
+
+function Add(first, second) {
+  //  this.first = first;
+  //  this.second = second;
+    BinatyOperation.apply(this, arguments);
+ /*   this.evaluate = function(x, y, z) {
+        return first.evaluate(x, y, z) + second.evaluate(x, y, z);
+    };
+    this.toString = function() {
+        return (first.toString() + " " + second.toString() + " +");
+    }
+    */
+}
+
+
+Subtract.prototype.toString = function() {
+    return (first.toString() + " " + second.toString() + " +");
+}
+
+function Multiply(first, second) {
+   // this.first = first;
+   // this.second = second;
+    BinatyOperation.apply(this, arguments);
+    this.evaluate = function(x, y, z){
+        return first.evaluate(x, y, z) * second.evaluate(x, y, z);
+    };
+    this.toString = function(){
+        return (first.toString() + " " + second.toString() + " *");
+    }
+}
+
+
+
+function Divide(first, second) {
+  //  this.first = first;
+   // this.second = second;
+    BinatyOperation.apply(this, arguments);
+    this.evaluate = function(x, y, z){
+        return first.evaluate(x, y, z) / second.evaluate(x, y, z);
+    };
+    this.toString = function(){
+        return (first.toString() + " " + second.toString() + " /");
+    }
+}
+
+function Negate(arg) {
+   // this.arg = arg;
+    this.evaluate = function (x, y, z) {
+        return -arg.evaluate(x, y, z);
+    };
+    this.toString = function () {
+        return arg.toString() + " negate";
+    }
+}
+
+function Const(arg) {
+    //this.arg = arg;
+    this.evaluate = function(x, y, z){
+        return arg;
+    };
+    this.toString = function() {
+        return ('' + arg);
+    }
+}
+
+
+function Variable(arg) {
+   // this.arg = arg;
+    this.evaluate = function(x, y, z) {
+        switch (arg) {
+            case 'x':
+                return x;
+            case 'y':
+                return y;
+            case 'z':
+                return z;
+        }
+    };
+    this.toString = function() {
+        return (arg);
+    }
+}
+
+
+/*var expr = new Subtract(
+ new Multiply(
+ new Const(2),
+ new Variable("z")
+ ),
+ new Const(3)
+ );*/
