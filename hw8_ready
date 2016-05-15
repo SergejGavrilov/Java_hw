@@ -1,0 +1,125 @@
+/**
+ * Created by 808648 on 24.04.2016.
+ */
+"use strict";
+var operation = function (l) {
+    return function () {
+        var args = [];
+        for (var i = 0; i < arguments.length; i++) {
+            args[i] = arguments[i];
+        }
+        return function (x, y, z) {
+            return l.apply(null, args.map(function (f) {
+                return f(x, y, z);
+            }));
+        }
+    }
+};
+
+var variable = function (a) {
+    return function (x, y, z) {
+        if (a == "x") {
+            return x;
+        }
+        if (a == "y") {
+            return y;
+        }
+        if (a == "z") {
+            return z;
+        }
+    }
+};
+
+
+var add = operation(function (x, y) {
+    return x + y;
+});
+
+var divide = operation(function (x, y) {
+    return x / y;
+});
+
+var subtract = operation(function (x, y) {
+    return x - y;
+});
+
+var multiply = operation(function (x, y) {
+    return x * y
+});
+var mod = operation(function (f, g) {
+    return f % g
+});
+
+var power = operation(Math.pow);
+
+var abs = operation(Math.abs);
+
+var log = operation(Math.log);
+
+
+var cnst = function (e) {
+    return function (x, y, z) {
+        return e;
+    }
+};
+
+var negate = operation(function (e) {
+    return -e;
+});
+
+
+
+//var expr = log(mod(power(add(log(subtract(subtract(cnst(-257753774), add(subtract(cnst(-818188693), variable('y')), divide(variable('x'), variable('z')))), add(power(cnst(919955875), subtract(multiply(variable('x'), variable('z')), variable('y'))), mod(variable('y'), cnst(1390827481))))), multiply(cnst(2120442432), cnst(1586220833))), power(abs(variable('x')), mod(variable('y'), add(variable('y'), mod(variable('z'), cnst(-834662287)))))), power(power(negate(mod(variable('y'), cnst(1116991159))), abs(cnst(502452691))), power(power(add(abs(cnst(-1381614780)), negate(mod(variable('y'), cnst(-342525531)))), add(cnst(-1363442416), cnst(-315875571))), divide(subtract(log(add(cnst(1138201499), divide(variable('z'), variable('y')))), add(cnst(1630572296), multiply(cnst(-1704799750), variable('x')))), divide(mod(cnst(-1685818521), variable('x')), subtract(variable('z'), multiply(variable('x'), mod(add(power(cnst(-816115670), cnst(-195145616)), subtract(cnst(-1670936134), variable('z'))), subtract(cnst(-1986562105), cnst(1520657314)))))))))));
+//console.log(expr(0.78687089908185110000, 0.81497651030249400000, 0.95944170612463600000));
+//var expr = mod(power(add(log(subtract(subtract(cnst(-257753774), add(subtract(cnst(-818188693), variable('y')), divide(variable('x'), variable('z')))), add(power(cnst(919955875), subtract(multiply(variable('x'), variable('z')), variable('y'))), mod(variable('y'), cnst(1390827481))))), multiply(cnst(2120442432), cnst(1586220833))), power(abs(variable('x')), mod(variable('y'), add(variable('y'), mod(variable('z'), cnst(-834662287)))))), power(power(negate(mod(variable('y'), cnst(1116991159))), abs(cnst(502452691))), power(power(add(abs(cnst(-1381614780)), negate(mod(variable('y'), cnst(-342525531)))), add(cnst(-1363442416), cnst(-315875571))), divide(subtract(log(add(cnst(1138201499), divide(variable('z'), variable('y')))), add(cnst(1630572296), multiply(cnst(-1704799750), variable('x')))), divide(mod(cnst(-1685818521), variable('x')), subtract(variable('z'), multiply(variable('x'), mod(add(power(cnst(-816115670), cnst(-195145616)), subtract(cnst(-1670936134), variable('z'))), subtract(cnst(-1986562105), cnst(1520657314))))))))));
+//console.log(expr(0.78687089908185110000, 0.81497651030249400000, 0.95944170612463600000));
+var expr = log(cnst(5));
+//console.log(expr(0.78687089908185110000, 0.81497651030249400000, 0.95944170612463600000));
+
+var binOperands = {
+    "+": add,
+    "-": subtract,
+    "/": divide,
+    "**": power,
+    "%": mod,
+    "*": multiply
+};
+
+var unOperands = {
+    "log": log,
+    "abs": abs,
+    "negate": negate
+};
+
+var parse = function (s) {
+    return s.trim().split(/\s+/).reduce(function (stack, cur) {
+
+        var binaryFunc = function (func) {
+            var first = stack.pop();
+            var second = stack.pop();
+            stack.push(new func(second, first));
+            return stack;
+        };
+
+        var unaryFunc = function (func) {
+            stack.push(new func(stack.pop()));
+            return stack;
+        };
+
+        if (cur in binOperands) {
+            return binaryFunc(binOperands[cur]);
+        } else {
+            if (cur in unOperands) {
+                return unaryFunc(unOperands[cur]);
+            } else {
+                if (cur == 'x' || cur == 'y' || cur == 'z')
+                    stack.push(new variable(cur));
+                else
+                    stack.push(new cnst(+cur));
+                return stack;
+            }
+        }
+    }, [])[0];
+};
+
+
