@@ -52,9 +52,9 @@ BinOp.prototype.toString = function () {
 };
 
 BinOp.prototype.prefix = function () {
-    return this._sign + " " + this._args.map(function (f) {
-            return f.toString()
-        }).join(" ")
+    return "(" + this._sign + " " + this._args.map(function (f) {
+            return f.prefix()
+        }).join(" ") + ")"
 };
 
 BinOp.prototype.diff = function (dVariable) {
@@ -66,6 +66,8 @@ function Subtract() {
         return a - b
     }, "-", subtractDiff);
 }
+
+//function Exp()
 
 Subtract.prototype = Object.create(BinOp.prototype);
 Subtract.prototype.constructor = Subtract;
@@ -235,12 +237,16 @@ ParseException.prototype.constructor = ParseException;
 
 var parsePrefix = function (s) {
     var bal = 0;
-    return s.replace(/\(|\)/g, function (x) {
+    var res = s.replace(/\(|\)/g, function (x) {
         return " " + x + " ";
     }).trim().split(/\s+/).reduceRight(function (stack, cur) {
         var binaryFunc = function (obj) {
-            stack.push(new obj(stack.pop(), stack.pop()));
-            return stack;
+            if (stack.length > 1) {
+                stack.push(new obj(stack.pop(), stack.pop()));
+                return stack;
+            } else {
+                throw new ParseException("too few arguments for operator " + cur)
+            }
         };
 
         var unaryFunc = function (obj) {
@@ -266,17 +272,19 @@ var parsePrefix = function (s) {
                 throw new ParseException("no closing brackets")
             }
         } else if (cur.match(/[^0-9]/g) != null) {
-            throw new ParseException("Unexpected symbol" + cur + "\n");
+            throw new ParseException("Unexpected symbol" + cur);
         } else if (cur == '') {
-            throw new ParseException("Symbol expected");
+            throw new ParseException("Empty input");
         } else {
             stack.push(new Const(+cur));
             return stack;
         }
 
-    }, [])[0];
+    }, []);
+    if (bal != 0) {throw new ParseException("no open brackets");}
+    if (res.length > 1) {throw new ParseException("too many arguments")}
+    return res[0];
 };
 
-//var ex = parse("2 4 *");
-//var expr = parsePrefix("yy");
-//console.log(expr.evaluate(1, 2, 3));
+var expr = parsePrefix("10");
+//console.log(expr.prefix());
