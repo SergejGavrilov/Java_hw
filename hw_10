@@ -28,6 +28,13 @@ function sinD(dV) {
     return new Multiply(new Cos(this._args[0]), this._args[0].diff(dV))
 }
 
+function expD(dV) {
+    return new Multiply(new Exp(this._args[0]), this._args[0].diff(dV))
+}
+
+function arcTanD(dV) {
+    return new Divide(this._args[0].diff(dV), new Add(new Const(1), new Multiply(this._args[0], this._args[0])))
+}
 
 function BinOp(args, operation, sign, diffFunction) {
     this._args = [];
@@ -60,6 +67,23 @@ BinOp.prototype.prefix = function () {
 BinOp.prototype.diff = function (dVariable) {
     return this._diffFunction(dVariable)
 };
+function Exp() {
+    BinOp.call(this, arguments, function (a) {
+        return Math.pow(Math.E, a);
+    }, "exp", expD);
+}
+
+Exp.prototype = Object.create(BinOp.prototype);
+Exp.prototype.constructor = Exp;
+
+function ArcTan() {
+    BinOp.call(this, arguments, function (a) {
+        return Math.atan(a);
+    }, "atan", arcTanD);
+}
+
+ArcTan.prototype = Object.create(BinOp.prototype);
+ArcTan.prototype.constructor = ArcTan;
 
 function Subtract() {
     BinOp.call(this, arguments, function (a, b) {
@@ -192,7 +216,9 @@ var binOperands = {
 var unOperands = {
     "negate": Negate,
     "cos": Cos,
-    "sin": Sin
+    "sin": Sin,
+    "exp": Exp,
+    "atan": ArcTan
 };
 
 var parse = function (s) {
@@ -228,11 +254,12 @@ var parse = function (s) {
 
 
 function ParseException(message) {
-    this._name = "ParsePrefix Error";
-    this._message = message;
+    this.name = "ParseError";
+    this.message = message;
 }
-ParseException.prototype = Object.create(Error.prototype);
-ParseException.prototype.constructor = ParseException;
+
+ParseException.prototype = Error.prototype;
+//ParseException.prototype.constructor = ParseException;
 
 
 var parsePrefix = function (s) {
@@ -245,20 +272,25 @@ var parsePrefix = function (s) {
                 stack.push(new obj(stack.pop(), stack.pop()));
                 return stack;
             } else {
-                throw new ParseException("too few arguments for operator " + cur)
+                throw new ParseException("too few arguments")
             }
         };
 
         var unaryFunc = function (obj) {
-            stack.push(new obj(stack.pop()));
-            return stack;
+            if (stack.length > 0) {
+                stack.push(new obj(stack.pop()));
+                return stack;
+            } else {
+                throw new ParseException("too few arguments")
+            }
         };
+        var exp = new RegExp("(\\d{" + cur.length.toString() + "})|(\-\\d{" + (cur.length - 1).toString() + "})", "g");
 
         if (cur in binOperands) {
             return binaryFunc(binOperands[cur]);
         } else if (cur in unOperands) {
             return unaryFunc(unOperands[cur]);
-        } else if (cur == 'x' || cur == 'y' || cur == 'z') {
+        } else if (cur == "x" || cur == "y" || cur == "z") {
             stack.push(new Variable(cur));
             return stack;
         } else if (cur == ')') {
@@ -271,8 +303,8 @@ var parsePrefix = function (s) {
             } else {
                 throw new ParseException("no closing brackets")
             }
-        } else if (cur.match(/[^0-9]/g) != null) {
-            throw new ParseException("Unexpected symbol" + cur);
+        } else if (cur.match(exp) == null) {
+            throw new ParseException("Unexpected symbol " + cur);
         } else if (cur == '') {
             throw new ParseException("Empty input");
         } else {
@@ -281,10 +313,17 @@ var parsePrefix = function (s) {
         }
 
     }, []);
-    if (bal != 0) {throw new ParseException("no open brackets");}
-    if (res.length > 1) {throw new ParseException("too many arguments")}
+    if (bal != 0) {
+        throw new ParseException("no open brackets");
+    }
+    if (res.length > 1) {
+        throw new ParseException("too many arguments for operator")
+    }
     return res[0];
 };
 
-var expr = parsePrefix("10");
+//var expr = parsePrefix('(exp (+ x y))');
 //console.log(expr.prefix());
+
+
+
