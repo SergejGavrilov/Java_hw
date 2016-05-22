@@ -1,0 +1,282 @@
+/**
+ * Created by 808648 on 14.05.2016.
+ */
+function addDiff(dVariable) {
+    return new Add(this._args[0].diff(dVariable), this._args[1].diff(dVariable))
+}
+function subtractDiff(dVariable) {
+    return new Subtract(this._args[0].diff(dVariable), this._args[1].diff(dVariable))
+}
+function multiplyDiff(dVariable) {
+    return new Add(new Multiply(this._args[0].diff(dVariable), this._args[1]),
+        new Multiply(this._args[0], this._args[1].diff(dVariable)))
+}
+function divD(dV) {
+    return new Divide(new Subtract(new Multiply(this._args[0].diff(dV), this._args[1]),
+        new Multiply(this._args[0], this._args[1].diff(dV))), new Multiply(this._args[1], this._args[1]))
+}
+
+function negD(dV) {
+    return new Negate(this._args[0].diff(dV))
+}
+
+function cosD(dV) {
+    return new Multiply(new Negate(new Sin(this._args[0])), this._args[0].diff(dV))
+}
+
+function sinD(dV) {
+    return new Multiply(new Cos(this._args[0]), this._args[0].diff(dV))
+}
+
+
+function BinOp(args, operation, sign, diffFunction) {
+    this._args = [];
+    for (var i = 0; i < args.length; i++) {
+        this._args[i] = args[i];
+    }
+    this._operation = operation;
+    this._sign = sign;
+    this._diffFunction = diffFunction;
+}
+
+BinOp.prototype.evaluate = function (x, y, z) {
+    return this._operation.apply(null, this._args.map(function (f) {
+        return f.evaluate(x, y, z)
+    }))
+};
+
+BinOp.prototype.toString = function () {
+    return this._args.map(function (f) {
+            return f.toString()
+        }).join(" ") + " " + this._sign;
+};
+
+BinOp.prototype.prefix = function () {
+    return this._sign + " " + this._args.map(function (f) {
+            return f.toString()
+        }).join(" ")
+};
+
+BinOp.prototype.diff = function (dVariable) {
+    return this._diffFunction(dVariable)
+};
+
+function Subtract() {
+    BinOp.call(this, arguments, function (a, b) {
+        return a - b
+    }, "-", subtractDiff);
+}
+
+Subtract.prototype = Object.create(BinOp.prototype);
+Subtract.prototype.constructor = Subtract;
+
+function Add() {
+    BinOp.call(this, arguments, function (a, b) {
+        return a + b
+    }, "+", addDiff);
+}
+
+Add.prototype = Object.create(BinOp.prototype);
+Add.prototype.constructor = Add;
+
+function Multiply() {
+    BinOp.call(this, arguments, function (a, b) {
+        return a * b
+    }, "*", multiplyDiff);
+}
+
+Multiply.prototype = Object.create(BinOp.prototype);
+Multiply.prototype.constructor = Multiply;
+
+function Divide() {
+    BinOp.call(this, arguments, function (a, b) {
+        return a / b
+    }, "/", divD);
+}
+
+Divide.prototype = Object.create(BinOp.prototype);
+Divide.prototype.constructor = Divide;
+
+function Negate() {
+    BinOp.call(this, arguments, function (a) {
+        return -a
+    }, "negate", negD)
+}
+
+Negate.prototype = Object.create(BinOp.prototype);
+Negate.prototype.constructor = Negate;
+
+
+function Sin() {
+    BinOp.call(this, arguments, function (a) {
+        return Math.sin(a)
+    }, "sin", sinD)
+}
+
+
+Sin.prototype = Object.create(BinOp.prototype);
+Sin.prototype.constructor = Sin;
+
+function Cos() {
+    BinOp.call(this, arguments, function (a) {
+        return Math.cos(a)
+    }, "cos", cosD)
+}
+
+Cos.prototype = Object.create(BinOp.prototype);
+Cos.prototype.constructor = Cos;
+
+function Const(arg) {
+    this.arg = arg;
+}
+
+Const.prototype.evaluate = function (x, y, z) {
+    return +this.arg;
+};
+
+Const.prototype.toString = function () {
+    return (this.arg.toString());
+};
+
+Const.prototype.diff = function (dVariable) {
+    return new Const(0);
+};
+
+Const.prototype.prefix = function () {
+    return (this.arg.toString());
+};
+
+function Variable(arg) {
+    this._arg = arg;
+}
+
+Variable.prototype.evaluate = function (x, y, z) {
+    switch (this._arg) {
+        case 'x':
+            return x;
+        case 'y':
+            return y;
+        case 'z':
+            return z;
+    }
+};
+Variable.prototype.toString = function () {
+    return (this._arg);
+};
+
+Variable.prototype.prefix = function () {
+    return (this._arg);
+};
+
+Variable.prototype.diff = function (dVariable) {
+    if (dVariable == this._arg) {
+        return new Const(1)
+    } else {
+        return new Const(0)
+    }
+};
+
+var expr = new Subtract(new Const(3), new Variable('y'));
+//console.log(expr.diff('y').evaluate(1.00000000000000000000, 1.00000000000000000000, 1.00000000000000000000));
+//console.log(expr.toString());
+
+var binOperands = {
+    "+": Add,
+    "-": Subtract,
+    "/": Divide,
+    "*": Multiply
+};
+
+var unOperands = {
+    "negate": Negate,
+    "cos": Cos,
+    "sin": Sin
+};
+
+var parse = function (s) {
+    return s.trim().split(/\s+/).reduce(function (stack, cur) {
+
+        var binaryFunc = function (obj) {
+            var first = stack.pop();
+            var second = stack.pop();
+            stack.push(new obj(second, first));
+            return stack;
+        };
+
+        var unaryFunc = function (obj) {
+            stack.push(new obj(stack.pop()));
+            return stack;
+        };
+
+        if (cur in binOperands) {
+            return binaryFunc(binOperands[cur]);
+        } else {
+            if (cur in unOperands) {
+                return unaryFunc(unOperands[cur]);
+            } else {
+                if (cur == 'x' || cur == 'y' || cur == 'z')
+                    stack.push(new Variable(cur));
+                else
+                    stack.push(new Const(+cur));
+                return stack;
+            }
+        }
+    }, [])[0];
+};
+
+
+function ParseException(message) {
+    this._name = "ParsePrefix Error";
+    this._message = message;
+}
+ParseException.prototype = Object.create(Error.prototype);
+ParseException.prototype.constructor = ParseException;
+
+
+var parsePrefix = function (s) {
+    var bal = 0;
+    return s.replace(/\(|\)/g, function (x) {
+        return " " + x + " ";
+    }).trim().split(/\s+/).reduceRight(function (stack, cur) {
+        var binaryFunc = function (obj) {
+            stack.push(new obj(stack.pop(), stack.pop()));
+            return stack;
+        };
+
+        var unaryFunc = function (obj) {
+            stack.push(new obj(stack.pop()));
+            return stack;
+        };
+
+        if (cur in binOperands) {
+            return binaryFunc(binOperands[cur]);
+        } else if (cur in unOperands) {
+            return unaryFunc(unOperands[cur]);
+        } else if (cur == 'x' || cur == 'y' || cur == 'z') {
+            stack.push(new Variable(cur));
+            return stack;
+        } else if (cur == ')') {
+            bal++;
+            return stack;
+        } else if (cur == '(') {
+            if (bal > 0) {
+                bal--;
+                return stack;
+            } else {
+                throw new ParseException("no closing brackets")
+            }
+        } else if (cur.match(/[^0-9]/g) != null) {
+            throw new ParseException("Unexpected symbol" + cur + "\n");
+        } else if (cur == '') {
+            throw new ParseException("Symbol expected");
+        } else {
+            stack.push(new Const(+cur));
+            return stack;
+        }
+
+    }, [])[0];
+};
+
+//var ex = parse("2 4 *");
+//var expr = parsePrefix("yy");
+//console.log(expr.evaluate(1, 2, 3));
