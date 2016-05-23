@@ -1,0 +1,34 @@
+(defn binop [l]
+  (fn [& v]
+    (fn [args]
+        (apply l (mapv (fn [elem] (elem args)) v))
+      )
+    )
+  )
+
+(defn constant [a] (fn [args] a))
+(defn add [a b] (fn [args] (+ (a args) (b args))))
+(defn subtract [a b] (fn [args] (- (a args) (b args))))
+(defn variable [a] (fn [args] (args a)))
+(defn multiply [a b] (fn [args] (* (a args) (b args))))
+(defn divide [a b] (fn [args] (/ (double (a args)) (double (b args)))))
+(defn negate [a] (fn [args] (- (a args))))
+(defn 'cos [a] (Math/cos x))
+
+
+(def operations {'+ add '- subtract '* multiply '/ divide 'negate negate})
+
+(defn parse [elem] (
+                     cond
+                     (symbol? elem) (variable (str elem))
+                     (number? elem) (constant elem)
+                     (list? elem) (apply (operations (first elem))
+                                         (mapv parse (rest elem)))
+                     ))
+
+(defn parseFunction [s] (parse (read-string s)))
+
+;(def expr (divide (subtract (subtract (multiply (variable "z") (constant -561710541.0)) (negate (divide (subtract (variable "x") (negate (multiply (variable "x") (variable "x")))) (negate (multiply (negate (variable "x")) (constant -708460911.0)))))) (negate (subtract (variable "z") (variable "y")))) (divide (subtract (variable "x") (variable "x")) (multiply (variable "y") (negate (constant -1312115305.0))))))
+;(println (expr {"z" 0.9534847357143016, "x" 0.5348049050106168, "y" 0.35124648271848025}))
+
+
